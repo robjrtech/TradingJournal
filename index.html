@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trading Journal Dashboard</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ── Navigation ── -->
+  <nav>
+    <a class="nav-brand" href="#">
+      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"
+           viewBox="0 0 24 24">
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+      </svg>
+      Trading Journal
+    </a>
+
+    <div class="nav-right">
+      <!-- Dark / Light toggle -->
+      <label class="theme-toggle" title="Toggle theme">
+        <span class="icon-sun">☀️</span>
+        <input type="checkbox" id="themeCheckbox" onchange="toggleTheme(this)" />
+        <div class="toggle-track"></div>
+        <span class="icon-moon">🌙</span>
+      </label>
+
+      <button class="import-btn" onclick="openImport()">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+        Import CSV
+      </button>
+      <div class="avatar">RJ</div>
+    </div>
+  </nav>
+
+  <!-- ── Body ── -->
+  <div class="layout">
+
+    <!-- Sidebar -->
+    <aside>
+      <div class="sidebar-label">Menu</div>
+
+      <div class="sidebar-item" data-page="dashboard">
+        <span>📊</span> Dashboard
+      </div>
+      <div class="sidebar-item">
+        <span>📝</span> Trade Log
+      </div>
+      <div class="sidebar-item">
+        <span>📈</span> Analytics
+      </div>
+      <div class="sidebar-item active" data-page="calendar">
+        <span>📅</span> Calendar
+      </div>
+
+      <div class="sidebar-divider"></div>
+
+      <div class="sidebar-label">Settings</div>
+      <div class="sidebar-item">
+        <span>⚙️</span> Preferences
+      </div>
+      <div class="sidebar-item">
+        <span>🔔</span> Alerts
+      </div>
+
+      <div class="sidebar-divider"></div>
+
+      <div class="sidebar-label">Data</div>
+      <div class="sidebar-item" onclick="openImport()">
+        <span>📥</span> Import CSV
+      </div>
+      <div class="sidebar-item danger" onclick="confirmClearData()">
+        <span>🗑️</span> Clear Imports
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main>
+
+      <!-- ── Dashboard Page ── -->
+      <div id="page-dashboard" class="page-section">
+        <div class="page-header">
+          <h1>Dashboard</h1>
+          <p>Welcome back, Robert — here's your trading overview.</p>
+        </div>
+
+        <!-- Stat Cards -->
+        <div class="stats-grid" id="dash-stats">
+          <div class="stat-card">
+            <div class="stat-label">Total P&amp;L</div>
+            <div class="stat-value" id="stat-total-pnl">—</div>
+            <div class="stat-sub">All time</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Win Rate</div>
+            <div class="stat-value" id="stat-win-rate">—</div>
+            <div class="stat-sub">All trades</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Total Trades</div>
+            <div class="stat-value" id="stat-total-trades">—</div>
+            <div class="stat-sub">All time</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Avg P&amp;L / Day</div>
+            <div class="stat-value" id="stat-avg-pnl">—</div>
+            <div class="stat-sub">Trading days only</div>
+          </div>
+        </div>
+
+        <!-- Two-column panels -->
+        <div class="two-col">
+          <div class="panel">
+            <div class="panel-title">Equity Curve</div>
+            <div class="placeholder-block">Chart coming soon</div>
+          </div>
+          <div class="panel">
+            <div class="panel-title">Recent Trades</div>
+            <div class="placeholder-block">Table coming soon</div>
+          </div>
+        </div>
+
+        <!-- Full-width panel -->
+        <div class="panel">
+          <div class="panel-title">Performance by Strategy</div>
+          <div class="placeholder-block">Chart coming soon</div>
+        </div>
+      </div>
+
+      <!-- ── Calendar Page ── -->
+      <div id="page-calendar" class="page-section active">
+        <div class="page-header">
+          <h1>Trading Calendar</h1>
+        </div>
+
+        <div class="panel">
+          <!-- Month navigation -->
+          <div class="cal-nav">
+            <button class="cal-btn" onclick="changeMonth(-1)">&#8592; Prev</button>
+            <h2 id="cal-month-title"></h2>
+            <button class="cal-btn" onclick="changeMonth(1)">Next &#8594;</button>
+          </div>
+
+          <!-- Calendar grid rendered by JS -->
+          <div id="cal-grid" class="cal-grid"></div>
+
+          <!-- Month summary -->
+          <div class="cal-month-summary" id="cal-month-summary"></div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ── Day Detail Modal ── -->
+  <div class="modal-overlay" id="modal-overlay" onclick="closeModalOnOverlay(event)">
+    <div class="modal" id="modal">
+      <div class="modal-header">
+        <div>
+          <h3 id="modal-date-title">—</h3>
+          <p id="modal-date-sub">—</p>
+        </div>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+
+      <div id="modal-pnl-banner" class="modal-pnl-banner">
+        <div>
+          <div class="banner-label">Day P&amp;L</div>
+          <div class="banner-value" id="modal-pnl-value">—</div>
+        </div>
+        <div style="text-align:right">
+          <div class="banner-label">Trades</div>
+          <div class="banner-value" id="modal-trade-count">—</div>
+        </div>
+      </div>
+
+      <div id="modal-trade-body"></div>
+
+      <div class="modal-note-area">
+        <label for="modal-notes">📓 Trading Notes</label>
+        <textarea id="modal-notes" placeholder="Reflection on today's trades, lessons learned, emotional state…"></textarea>
+        <button class="modal-save-btn" onclick="saveNote()">Save Note</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CSV Import Modal ── -->
+  <div class="import-overlay" id="import-overlay" onclick="closeImportOnOverlay(event)">
+    <div class="import-modal">
+      <div class="import-modal-header">
+        <div>
+          <h3>📥 Import Trades from CSV</h3>
+          <p>Upload a CSV file to populate your trading journal.</p>
+        </div>
+        <button class="modal-close" onclick="closeImport()">✕</button>
+      </div>
+
+      <!-- Format hint -->
+      <div class="format-hint">
+        <strong>Required CSV columns</strong> (header row mandatory, order flexible):
+        <code>date, symbol, side, qty, entry, exit, pnl</code>
+        <span style="display:block;margin-top:6px;">
+          <strong>date</strong> → YYYY-MM-DD, MM/DD/YYYY, or MM/DD/YYYY HH:MM:SS ±TZ &nbsp;|&nbsp; also accepts: <em>tradeday, trade_date</em><br>
+          <strong>symbol</strong> → also accepts: <em>contractname, contract, ticker</em><br>
+          <strong>side</strong> → long/short/buy/sell &nbsp;|&nbsp; also accepts: <em>type, direction</em><br>
+          <strong>qty</strong> → also accepts: <em>size, quantity, contracts</em><br>
+          <strong>entry / exit</strong> → also accepts: <em>entryprice / exitprice</em>
+        </span>
+        <span style="display:block;margin-top:4px;font-style:italic;">
+          Example row: <code>2026-04-01, AAPL, long, 100, 182.40, 185.20, 280.00</code>
+        </span>
+      </div>
+
+      <!-- Drop zone -->
+      <div class="drop-zone" id="drop-zone" onclick="document.getElementById('csv-file-input').click()"
+           ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+        <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="display:block;margin:0 auto 10px;">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="12" y1="18" x2="12" y2="12"/>
+          <polyline points="9 15 12 12 15 15"/>
+        </svg>
+        <p><strong>Click to browse</strong> or drag &amp; drop your CSV here</p>
+        <p style="font-size:.78rem;margin-top:4px;" id="drop-file-name">No file selected</p>
+      </div>
+      <input type="file" id="csv-file-input" accept=".csv,text/csv" onchange="handleFileSelect(event)" />
+
+      <!-- Error box -->
+      <div class="import-error" id="import-error"></div>
+
+      <!-- Preview -->
+      <div class="import-preview" id="import-preview">
+        <div class="import-preview-title">
+          Preview
+          <span class="import-preview-count" id="import-preview-count"></span>
+        </div>
+        <div class="preview-scroll">
+          <table class="trade-table" id="import-preview-table"></table>
+        </div>
+      </div>
+
+      <!-- Merge mode -->
+      <div class="import-mode" id="import-mode-row" style="display:none;">
+        <label>
+          <input type="radio" name="import-mode" value="merge" checked />
+          Merge with existing data
+        </label>
+        <label>
+          <input type="radio" name="import-mode" value="replace" />
+          Replace imported data only
+        </label>
+      </div>
+
+      <!-- Actions -->
+      <div class="import-actions">
+        <button class="btn-secondary" onclick="closeImport()">Cancel</button>
+        <button class="btn-primary" id="import-confirm-btn" onclick="confirmImport()" disabled>
+          Import Trades
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Trade Detail Overlay ── -->
+  <div class="trade-detail-overlay" id="trade-detail-overlay" onclick="closeTDOnOverlay(event)">
+    <div class="trade-detail-panel">
+
+      <!-- Header -->
+      <div class="trade-detail-header">
+        <h3>
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+          Trade Detail
+        </h3>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="back-btn" onclick="closeTradeDetail()">
+            ← Back to Day
+          </button>
+          <button class="modal-close" onclick="closeTradeDetail()">✕</button>
+        </div>
+      </div>
+
+      <!-- Body: left + right -->
+      <div class="trade-detail-body">
+
+        <!-- LEFT: trade info -->
+        <div class="trade-detail-left">
+          <h4>Trade Information</h4>
+
+          <!-- P&L banner -->
+          <div id="td-pnl-banner" class="td-pnl-banner">
+            <div>
+              <div class="pnl-label">P&amp;L</div>
+              <div class="pnl-amount" id="td-pnl-amount">—</div>
+            </div>
+          </div>
+
+          <div class="detail-fields">
+            <!-- Read-only fields -->
+            <div class="detail-field">
+              <label>Date</label>
+              <div class="field-value" id="td-date">—</div>
+            </div>
+            <div class="detail-field">
+              <label>Symbol</label>
+              <div class="field-value" id="td-symbol">—</div>
+            </div>
+            <div class="detail-field">
+              <label>Side</label>
+              <div class="field-value" id="td-side">—</div>
+            </div>
+            <div class="detail-field">
+              <label>Quantity</label>
+              <div class="field-value" id="td-qty">—</div>
+            </div>
+            <div class="detail-field">
+              <label>Entry Price</label>
+              <div class="field-value" id="td-entry">—</div>
+            </div>
+            <div class="detail-field">
+              <label>Exit Price</label>
+              <div class="field-value" id="td-exit">—</div>
+            </div>
+
+            <!-- Editable fields -->
+            <div class="detail-field">
+              <label>Entry Time</label>
+              <input type="time" id="td-entry-time" placeholder="HH:MM" />
+            </div>
+            <div class="detail-field">
+              <label>Exit Time</label>
+              <input type="time" id="td-exit-time" placeholder="HH:MM" />
+            </div>
+            <div class="detail-field">
+              <label>Duration</label>
+              <input type="text" id="td-duration" placeholder="e.g. 12 min" />
+            </div>
+            <div class="detail-field">
+              <label>Fees / Commission</label>
+              <input type="number" id="td-fees" placeholder="0.00" step="0.01" min="0" />
+            </div>
+            <div class="detail-field full-width">
+              <label>Notes</label>
+              <input type="text" id="td-notes" placeholder="Setup, reason for entry, lessons learned…" />
+            </div>
+          </div>
+
+          <button class="detail-save-btn" onclick="saveTradeDetail()">💾 Save Changes</button>
+        </div>
+
+        <!-- RIGHT: image upload -->
+        <div class="trade-detail-right">
+          <h4>Trade Screenshot</h4>
+
+          <div class="trade-img-zone" id="td-img-zone"
+               onclick="document.getElementById('td-img-input').click()"
+               ondragover="tdDragOver(event)" ondragleave="tdDragLeave(event)" ondrop="tdDrop(event)">
+            <div class="img-placeholder" id="td-img-placeholder">
+              <svg width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.4" viewBox="0 0 24 24">
+                <rect x="3" y="3" width="18" height="18" rx="3"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+              <p><strong>Click or drag</strong> to upload a chart screenshot</p>
+              <small>PNG, JPG, GIF, WebP supported</small>
+            </div>
+            <img id="td-img-preview" src="" alt="Trade screenshot"
+                 style="display:none;max-width:100%;border-radius:8px;" />
+          </div>
+
+          <input type="file" id="td-img-input" accept="image/*" style="display:none"
+                 onchange="tdFileSelect(event)" />
+
+          <div class="img-actions">
+            <button class="img-action-btn" onclick="document.getElementById('td-img-input').click()">
+              <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              Upload Image
+            </button>
+            <button class="img-action-btn danger" id="td-remove-img-btn"
+                    onclick="removeTdImage()" style="display:none">
+              <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6l-1 14H6L5 6"/>
+                <path d="M10 11v6M14 11v6"/>
+              </svg>
+              Remove
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="scripts.js"></script>
+</body>
+</html>
