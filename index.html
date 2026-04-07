@@ -27,6 +27,24 @@
         <span class="icon-moon">🌙</span>
       </label>
 
+      <!-- Account Filter -->
+      <div id="acct-filter-wrap" class="acct-filter-wrap">
+        <button id="acct-filter-btn" class="acct-filter-btn" onclick="toggleAccountDropdown()">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          <span id="acct-filter-label">All Accounts</span>
+          <span id="acct-filter-badge" class="acct-filter-badge" style="display:none"></span>
+          <svg id="acct-filter-chevron" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" class="acct-chevron">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
+        <div id="acct-dropdown" class="acct-dropdown">
+          <div id="acct-dropdown-list"></div>
+        </div>
+      </div>
+
       <button class="import-btn" onclick="openImport()">
         <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -134,29 +152,8 @@
 
         <!-- ── Trading Calendar (anchored section) ── -->
         <div id="cal-section">
-          <div class="page-header cal-page-header" style="margin-top:32px;">
-            <div>
-              <h1>Trading Calendar</h1>
-            </div>
-
-            <!-- Account Filter Dropdown -->
-            <div id="acct-filter-wrap" class="acct-filter-wrap">
-              <button id="acct-filter-btn" class="acct-filter-btn" onclick="toggleAccountDropdown()">
-                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                  <circle cx="12" cy="7" r="4"/>
-                </svg>
-                <span id="acct-filter-label">All Accounts</span>
-                <span id="acct-filter-badge" class="acct-filter-badge" style="display:none"></span>
-                <svg id="acct-filter-chevron" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" class="acct-chevron">
-                  <polyline points="6 9 12 15 18 9"/>
-                </svg>
-              </button>
-
-              <div id="acct-dropdown" class="acct-dropdown">
-                <div id="acct-dropdown-list"></div>
-              </div>
-            </div>
+          <div class="page-header" style="margin-top:32px;">
+            <h1>Trading Calendar</h1>
           </div>
 
           <div class="panel">
