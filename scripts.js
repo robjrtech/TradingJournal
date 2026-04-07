@@ -541,9 +541,23 @@ function saveNote() {
 ═══════════════════════════════════════════════ */
 document.querySelectorAll(".sidebar-item[data-page]").forEach(item => {
   item.addEventListener("click", () => {
+    const page = item.dataset.page;
+
+    // "Calendar" navigates to Dashboard and scrolls to the calendar section
+    if (page === "calendar") {
+      document.querySelectorAll(".sidebar-item").forEach(i => i.classList.remove("active"));
+      item.classList.add("active");
+      document.querySelectorAll(".page-section").forEach(s => s.classList.remove("active"));
+      document.getElementById("page-dashboard").classList.add("active");
+      setTimeout(() => {
+        const cal = document.getElementById("cal-section");
+        if (cal) cal.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 50);
+      return;
+    }
+
     document.querySelectorAll(".sidebar-item").forEach(i => i.classList.remove("active"));
     item.classList.add("active");
-    const page = item.dataset.page;
     document.querySelectorAll(".page-section").forEach(s => s.classList.remove("active"));
     document.getElementById("page-" + page).classList.add("active");
   });
@@ -1069,6 +1083,55 @@ function saveTradeImages(data) {
   localStorage.setItem("tradeImages", JSON.stringify(data));
 }
 
+/* ═══════════════════════════════════════════════
+   TRADING STRATEGIES
+   Stored in localStorage as a JSON array of strings.
+═══════════════════════════════════════════════ */
+const DEFAULT_STRATEGIES = [
+  "Breakout", "Pullback", "Trend Follow", "Reversal",
+  "VWAP", "Scalp", "News Play", "Gap & Go"
+];
+
+function getStrategies() {
+  try {
+    const raw = localStorage.getItem("tradingStrategies");
+    return raw ? JSON.parse(raw) : [...DEFAULT_STRATEGIES];
+  } catch { return [...DEFAULT_STRATEGIES]; }
+}
+
+function saveStrategies(arr) {
+  localStorage.setItem("tradingStrategies", JSON.stringify(arr));
+}
+
+function populateStrategyDropdown(selectedValue) {
+  const sel = document.getElementById("td-strategy");
+  if (!sel) return;
+  const strategies = getStrategies();
+  // Rebuild options
+  sel.innerHTML = `<option value="">— Select strategy —</option>`;
+  strategies.forEach(s => {
+    const opt = document.createElement("option");
+    opt.value = s;
+    opt.textContent = s;
+    if (s === selectedValue) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  sel.insertAdjacentHTML("beforeend", `<option value="__new__">+ Add new strategy…</option>`);
+}
+
+function handleStrategyChange(sel) {
+  if (sel.value !== "__new__") return;
+  const name = prompt("Enter new strategy name:");
+  if (!name || !name.trim()) { sel.value = ""; return; }
+  const trimmed = name.trim();
+  const strategies = getStrategies();
+  if (!strategies.includes(trimmed)) {
+    strategies.push(trimmed);
+    saveStrategies(strategies);
+  }
+  populateStrategyDropdown(trimmed);
+}
+
 function openTradeDetail(dateKey, tradeIdx) {
   const trades = tradeData[dateKey] || [];
   const t = trades[tradeIdx];
@@ -1101,6 +1164,7 @@ function openTradeDetail(dateKey, tradeIdx) {
   document.getElementById("td-entry-time").value = extras.entryTime || "";
   document.getElementById("td-exit-time").value  = extras.exitTime  || "";
   document.getElementById("td-duration").value   = extras.duration  || "";
+  populateStrategyDropdown(extras.strategy || "");
   document.getElementById("td-fees").value        = extras.fees != null ? extras.fees : "";
   document.getElementById("td-notes").value       = extras.notes    || "";
 
@@ -1174,6 +1238,7 @@ function saveTradeDetail() {
     exitTime:  document.getElementById("td-exit-time").value,
     duration:  document.getElementById("td-duration").value.trim(),
     fees:      parseFloat(document.getElementById("td-fees").value) || 0,
+    strategy:  document.getElementById("td-strategy")?.value || "",
     notes:     document.getElementById("td-notes").value.trim(),
   };
   saveTradeExtras(extras);
