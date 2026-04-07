@@ -1597,3 +1597,92 @@ main {
   gap: 8px;
   flex-wrap: wrap;
 }
+
+/* ── Trade row kebab menu ── */
+.trade-menu-cell {
+  width: 28px;
+  padding: 0 !important;
+  position: relative;
+  text-align: center;
+}
+
+.trade-kebab-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity .15s, background .15s, color .15s;
+  letter-spacing: -1px;
+}
+
+tr:hover .trade-kebab-btn {
+  opacity: 1;
+}
+
+.trade-kebab-btn:hover {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.trade-menu-dropdown {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 2px);
+  z-index: 200;
+  min-width: 148px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.14);
+  padding: 4px;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.trade-menu-dropdown.open {
+  display: flex;
+}
+
+.trade-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  font-size: .8rem;
+  font-weight: 500;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  color: var(--text-primary);
+  transition: background .12s, color .12s;
+}
+
+.trade-menu-item:hover {
+  background: var(--bg-primary);
+}
+
+.trade-menu-item.delete {
+  color: #dc2626;
+}
+
+.trade-menu-item.delete:hover {
+  background: rgba(220,38,38,.08);
+}
+
+.trade-menu-item.disabled {
+  color: var(--text-secondary);
+  font-style: italic;
+  cursor: default;
+  font-size: .75rem;
+}

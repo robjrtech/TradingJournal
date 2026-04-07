@@ -168,7 +168,9 @@ function mergeTradeData() {
   const imported = getImportedTrades();
   Object.entries(imported).forEach(([date, trades]) => {
     if (!tradeData[date]) tradeData[date] = [];
-    tradeData[date] = tradeData[date].concat(trades);
+    // Tag each trade with its index in the importedTrades array so we can delete it later
+    const tagged = trades.map((t, i) => ({ ...t, _importedIdx: i }));
+    tradeData[date] = tradeData[date].concat(tagged);
   });
 }
 
@@ -402,6 +404,7 @@ function openModal(dateKey) {
 
   // Trade table
   const body = document.getElementById("modal-trade-body");
+  const colCount = (showAcctCol ? 7 : 6) + 1; // +1 for delete col
   let html = `<table class="trade-table">
     <thead>
       <tr>
@@ -412,6 +415,7 @@ function openModal(dateKey) {
         <th>Exit</th>
         <th>P&amp;L</th>
         ${showAcctCol ? "<th>Account</th>" : ""}
+        <th></th>
       </tr>
     </thead>
     <tbody>`;
@@ -420,6 +424,23 @@ function openModal(dateKey) {
     const sideClass = t.side === "long" ? "side-long" : "side-short";
     const acctName  = t.account || "Default";
     const acctColor = getAccountColor(acctName, allAccountsSorted);
+    const canDelete = t._importedIdx !== undefined;
+    const menuId = `trade-menu-${origIdx}`;
+    const menuCell = `<td class="trade-menu-cell" onclick="event.stopPropagation()">
+        <button class="trade-kebab-btn" onclick="toggleTradeMenu('${menuId}', event)" title="Options">&#8942;</button>
+        <div class="trade-menu-dropdown" id="${menuId}">
+          ${canDelete
+            ? `<button class="trade-menu-item delete" onclick="deleteTrade('${dateKey}', ${t._importedIdx})">
+                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                  <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+                </svg>
+                Delete Trade
+              </button>`
+            : `<span class="trade-menu-item disabled">Cannot delete built-in trade</span>`
+          }
+        </div>
+      </td>`;
     html += `<tr class="clickable-row" onclick="openTradeDetail('${dateKey}', ${origIdx})" title="View trade detail">
       <td><strong>${t.symbol}</strong></td>
       <td><span class="${sideClass}">${t.side.toUpperCase()}</span></td>
@@ -428,10 +449,11 @@ function openModal(dateKey) {
       <td>${fmtPrice(t.exit)}</td>
       <td class="${pnlClass}">${fmtPnl(t.pnl)}</td>
       ${showAcctCol ? `<td><span class="acct-dot-sm" style="background:${acctColor}"></span>${acctName}</td>` : ""}
+      ${menuCell}
     </tr>`;
   });
   if (displayTrades.length === 0) {
-    html += `<tr><td colspan="${showAcctCol ? 7 : 6}" style="text-align:center;padding:20px;color:var(--text-secondary);">No trades for selected accounts on this day.</td></tr>`;
+    html += `<tr><td colspan="${colCount}" style="text-align:center;padding:20px;color:var(--text-secondary);">No trades for selected accounts on this day.</td></tr>`;
   }
   html += `</tbody></table>`;
   body.innerHTML = html;
@@ -452,6 +474,57 @@ function closeModal() {
 
 function closeModalOnOverlay(e) {
   if (e.target === document.getElementById("modal-overlay")) closeModal();
+}
+
+/* ── Trade row kebab menu ── */
+let _openTradeMenu = null; // track open menu id
+
+function toggleTradeMenu(menuId, e) {
+  e.stopPropagation();
+  const menu = document.getElementById(menuId);
+  if (!menu) return;
+  // Close any other open menu first
+  if (_openTradeMenu && _openTradeMenu !== menuId) {
+    const prev = document.getElementById(_openTradeMenu);
+    if (prev) prev.classList.remove("open");
+  }
+  const isOpen = menu.classList.toggle("open");
+  _openTradeMenu = isOpen ? menuId : null;
+}
+
+// Close menus when clicking elsewhere in the modal
+document.addEventListener("click", () => {
+  if (_openTradeMenu) {
+    const m = document.getElementById(_openTradeMenu);
+    if (m) m.classList.remove("open");
+    _openTradeMenu = null;
+  }
+});
+
+function deleteTrade(dateKey, importedIdx) {
+  // Close the open menu
+  if (_openTradeMenu) {
+    const m = document.getElementById(_openTradeMenu);
+    if (m) m.classList.remove("open");
+    _openTradeMenu = null;
+  }
+
+  const stored = getImportedTrades();
+  if (!stored[dateKey]) return;
+  stored[dateKey].splice(importedIdx, 1);
+  if (stored[dateKey].length === 0) delete stored[dateKey];
+  saveImportedTrades(stored);
+  mergeTradeData();
+  renderCalendar();
+  updateDashStats();
+  updateAcctFilterBtn();
+
+  // Re-open the modal to reflect the deletion (or close if no trades left)
+  if (tradeData[dateKey] && tradeData[dateKey].length > 0) {
+    openModal(dateKey);
+  } else {
+    closeModal();
+  }
 }
 
 function saveNote() {
