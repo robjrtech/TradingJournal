@@ -239,21 +239,32 @@
         </span>
       </div>
 
-      <!-- Account Name field -->
+      <!-- Account selector (Step 1) -->
       <div class="import-account-row">
-        <label for="import-account-name">
-          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <div class="import-step-label">
+          <span class="import-step-num">1</span>
+          <label for="import-account-name">Choose Account</label>
+        </div>
+        <div class="import-account-input-wrap">
+          <svg class="import-account-icon" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
             <circle cx="12" cy="7" r="4"/>
           </svg>
-          Account Name <span style="font-weight:400;color:var(--text-secondary)">(optional)</span>
-        </label>
-        <input type="text" id="import-account-name" placeholder="e.g. Apex, TD Ameritrade, Robinhood…"
-               oninput="refreshImportPreview()" />
-        <p class="import-account-hint">Tag these trades to a specific account. If your CSV has an <code>account</code> column, that takes precedence per row.</p>
+          <input type="text" id="import-account-name" list="account-suggestions"
+                 placeholder="Select existing or type new account name…"
+                 oninput="refreshImportPreview()" autocomplete="off" />
+          <datalist id="account-suggestions"></datalist>
+          <span class="import-account-clear" id="import-acct-clear" onclick="clearAccountInput()" title="Clear">✕</span>
+        </div>
+        <div class="import-account-chips" id="import-account-chips"></div>
+        <p class="import-account-hint">All trades in this CSV will be tagged to this account. Leave blank to use the <code>account</code> column in your CSV instead.</p>
       </div>
 
-      <!-- Drop zone -->
+      <!-- Drop zone (Step 2) -->
+      <div class="import-step-label" style="margin-bottom:6px;">
+        <span class="import-step-num">2</span>
+        <label>Upload CSV File</label>
+      </div>
       <div class="drop-zone" id="drop-zone" onclick="document.getElementById('csv-file-input').click()"
            ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
         <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="display:block;margin:0 auto 10px;">

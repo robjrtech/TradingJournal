@@ -1365,6 +1365,35 @@ main {
   flex-shrink: 0;
 }
 
+/* ── Import modal: Step labels ── */
+.import-step-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.import-step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: .72rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.import-step-label label {
+  font-size: .85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
 /* ── Import modal: Account Name field ── */
 .import-account-row {
   margin-bottom: 20px;
@@ -1381,6 +1410,87 @@ main {
 }
 
 .import-account-row label svg { color: var(--accent); }
+
+/* Account input wrapper with icon and clear button */
+.import-account-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.import-account-icon {
+  position: absolute;
+  left: 11px;
+  color: var(--text-secondary);
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+.import-account-clear {
+  position: absolute;
+  right: 10px;
+  font-size: .8rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  line-height: 1;
+  transition: color .15s, background .15s;
+}
+.import-account-clear:hover { color: var(--text-primary); background: var(--bg-primary); }
+
+.import-account-input-wrap input {
+  width: 100%;
+  border: 1.5px solid var(--accent);
+  border-radius: 8px;
+  background: var(--bg-surface-2);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: .875rem;
+  padding: 9px 32px 9px 32px;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+
+.import-account-input-wrap input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(79,70,229,.15);
+}
+
+/* Quick-pick chips */
+.import-account-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.acct-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 99px;
+  border: 1.5px solid var(--border);
+  background: var(--bg-surface-2);
+  color: var(--text-secondary);
+  font-size: .76rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color .15s, color .15s, background .15s;
+}
+
+.acct-chip:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(79,70,229,.06);
+}
+
+.acct-chip.active {
+  border-color: var(--accent);
+  background: rgba(79,70,229,.1);
+  color: var(--accent);
+}
 
 .import-account-row input {
   width: 100%;

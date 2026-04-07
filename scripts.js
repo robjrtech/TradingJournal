@@ -539,8 +539,48 @@ function openImport() {
   document.getElementById("csv-file-input").value = "";
   const acctInput = document.getElementById("import-account-name");
   if (acctInput) acctInput.value = "";
+  // Populate account datalist + chips from existing accounts
+  populateImportAccountSuggestions();
   document.getElementById("import-overlay").classList.add("open");
   document.body.style.overflow = "hidden";
+}
+
+function populateImportAccountSuggestions() {
+  const allAccounts = [...getAllAccounts()].sort();
+  // Datalist for autocomplete
+  const dl = document.getElementById("account-suggestions");
+  if (dl) {
+    dl.innerHTML = allAccounts
+      .filter(a => a !== "Default")
+      .map(a => `<option value="${a.replace(/"/g,'&quot;')}">`)
+      .join("");
+  }
+  // Quick-pick chips (existing accounts only, excluding Default)
+  const chips = document.getElementById("import-account-chips");
+  if (!chips) return;
+  const named = allAccounts.filter(a => a !== "Default");
+  if (named.length === 0) { chips.innerHTML = ""; return; }
+  chips.innerHTML = named.map(a => {
+    const escaped = a.replace(/'/g, "\\'");
+    return `<button type="button" class="acct-chip" onclick="selectImportAccount('${escaped}')">${a}</button>`;
+  }).join("");
+}
+
+function selectImportAccount(name) {
+  const input = document.getElementById("import-account-name");
+  if (!input) return;
+  input.value = name;
+  // Highlight the active chip
+  document.querySelectorAll(".acct-chip").forEach(c => {
+    c.classList.toggle("active", c.textContent === name);
+  });
+  refreshImportPreview();
+}
+
+function clearAccountInput() {
+  const input = document.getElementById("import-account-name");
+  if (input) { input.value = ""; refreshImportPreview(); }
+  document.querySelectorAll(".acct-chip").forEach(c => c.classList.remove("active"));
 }
 
 function closeImport() {
@@ -747,6 +787,11 @@ function showImportError(msg) {
 }
 
 function refreshImportPreview() {
+  // Sync chip highlight with typed account name
+  const val = (document.getElementById("import-account-name") || {}).value || "";
+  document.querySelectorAll(".acct-chip").forEach(c => {
+    c.classList.toggle("active", c.textContent === val);
+  });
   if (parsedImportRows.length > 0) renderImportPreview(parsedImportRows);
 }
 
@@ -789,9 +834,18 @@ function renderImportPreview(rows) {
 function confirmImport() {
   if (parsedImportRows.length === 0) return;
 
+  const fallbackAccount = (document.getElementById("import-account-name") || {}).value.trim() || "";
+  // Warn if no account name and no account column in CSV
+  const anyHasAccountCol = parsedImportRows.some(r => r.accountCSV && r.accountCSV.length > 0);
+  if (!fallbackAccount && !anyHasAccountCol) {
+    const proceed = confirm(
+      "No account name specified.\n\nAll imported trades will be tagged as \"Default\".\n\nContinue anyway?"
+    );
+    if (!proceed) return;
+  }
+
   const mode = document.querySelector('input[name="import-mode"]:checked').value;
   let stored = mode === "replace" ? {} : getImportedTrades();
-  const fallbackAccount = (document.getElementById("import-account-name") || {}).value || "";
 
   // Group rows by date
   parsedImportRows.forEach(r => {
