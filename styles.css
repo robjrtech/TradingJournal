@@ -1524,3 +1524,76 @@ main {
   padding: 1px 5px;
   font-size: .72rem;
 }
+
+/* ── Duplicate detection styles ── */
+.import-dup-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: rgba(217,119,6,.12);
+  color: #b45309;
+  font-size: .72rem;
+  font-weight: 700;
+  border: 1px solid rgba(217,119,6,.25);
+}
+
+[data-theme="dark"] .import-dup-badge {
+  background: rgba(217,119,6,.2);
+  color: #fbbf24;
+  border-color: rgba(217,119,6,.35);
+}
+
+.import-dup-toggle {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(217,119,6,.07);
+  border: 1px solid rgba(217,119,6,.2);
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.import-dup-toggle label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: .8rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+/* Preview row states */
+.import-row-skip {
+  opacity: 0.42;
+  text-decoration: line-through;
+  background: rgba(100,100,100,.04) !important;
+}
+
+.import-row-dup {
+  background: rgba(217,119,6,.06) !important;
+}
+
+/* Status icon column */
+.import-status-cell {
+  width: 20px;
+  text-align: center;
+  font-size: .8rem;
+  font-weight: 700;
+  padding: 0 4px !important;
+}
+.import-status-cell.ok  { color: var(--cal-week-win); }
+.import-status-cell.skip { color: var(--text-secondary); }
+.import-status-cell.dup  { color: #d97706; }
+
+/* Preview title layout */
+.import-preview-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}

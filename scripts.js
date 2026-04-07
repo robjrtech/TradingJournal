@@ -539,6 +539,13 @@ function openImport() {
   document.getElementById("csv-file-input").value = "";
   const acctInput = document.getElementById("import-account-name");
   if (acctInput) acctInput.value = "";
+  // Reset duplicate badge
+  const badge = document.getElementById("import-dup-badge");
+  if (badge) badge.style.display = "none";
+  const toggle = document.getElementById("import-dup-toggle");
+  if (toggle) toggle.style.display = "none";
+  const dupSkip = document.querySelector('input[name="dup-mode"][value="skip"]');
+  if (dupSkip) dupSkip.checked = true;
   // Populate account datalist + chips from existing accounts
   populateImportAccountSuggestions();
   document.getElementById("import-overlay").classList.add("open");
@@ -795,22 +802,100 @@ function refreshImportPreview() {
   if (parsedImportRows.length > 0) renderImportPreview(parsedImportRows);
 }
 
+/* ── Duplicate detection ──
+   A trade is a duplicate if, for the same date + account, an already-stored
+   trade matches on symbol, side, entry, exit, AND pnl (qty can vary by broker).
+*/
+function tradeKey(t) {
+  return [t.symbol, t.side, t.entry, t.exit, t.pnl].join("|");
+}
+
+function buildExistingKeySet(mode) {
+  // In "replace" mode there are no existing trades to clash with
+  if (mode === "replace") return {};
+  const stored = getImportedTrades();
+  // {  "YYYY-MM-DD|account" : Set<key> }
+  const map = {};
+  Object.entries(stored).forEach(([date, trades]) => {
+    trades.forEach(t => {
+      const acct = t.account || "Default";
+      const mk = `${date}|${acct}`;
+      if (!map[mk]) map[mk] = new Set();
+      map[mk].add(tradeKey(t));
+    });
+  });
+  return map;
+}
+
 function renderImportPreview(rows) {
   const table = document.getElementById("import-preview-table");
-  document.getElementById("import-preview-count").textContent = rows.length + " trade" + (rows.length !== 1 ? "s" : "");
+  const fallbackAcct = (document.getElementById("import-account-name") || {}).value.trim() || "";
 
-  const fallbackAcct = (document.getElementById("import-account-name") || {}).value || "";
+  // Determine current merge mode (default to "merge" if mode row hidden)
+  const modeEl = document.querySelector('input[name="import-mode"]:checked');
+  const mode = modeEl ? modeEl.value : "merge";
+  const dupModeEl = document.querySelector('input[name="dup-mode"]:checked');
+  const dupMode = dupModeEl ? dupModeEl.value : "skip";
+
+  const existingKeys = buildExistingKeySet(mode);
+
+  // Tag each row as duplicate or not
+  let dupCount = 0;
+  const tagged = rows.map(r => {
+    const acct = r.accountCSV || fallbackAcct || "Default";
+    const mk = `${r.date}|${acct}`;
+    const isDup = !!(existingKeys[mk] && existingKeys[mk].has(tradeKey(r)));
+    if (isDup) dupCount++;
+    return { ...r, _isDup: isDup, _acct: acct };
+  });
+
+  // Update preview count
+  const newCount = dupMode === "skip" ? rows.length - dupCount : rows.length;
+  document.getElementById("import-preview-count").textContent =
+    newCount + " trade" + (newCount !== 1 ? "s" : "");
+
+  // Show/hide duplicate badge and toggle
+  const badge = document.getElementById("import-dup-badge");
+  const toggle = document.getElementById("import-dup-toggle");
+  if (dupCount > 0) {
+    badge.textContent = `${dupCount} duplicate${dupCount !== 1 ? "s" : ""}`;
+    badge.style.display = "inline-flex";
+    if (toggle) toggle.style.display = "flex";
+  } else {
+    badge.style.display = "none";
+    if (toggle) toggle.style.display = "none";
+  }
+
+  // Update confirm button text
+  const btn = document.getElementById("import-confirm-btn");
+  if (btn && !btn.disabled) {
+    if (dupCount > 0 && dupMode === "skip") {
+      btn.textContent = `Import ${newCount} Trade${newCount !== 1 ? "s" : ""} (${dupCount} skipped)`;
+    } else if (dupCount > 0 && dupMode === "allow") {
+      btn.textContent = `Import ${rows.length} Trade${rows.length !== 1 ? "s" : ""} (incl. duplicates)`;
+    } else {
+      btn.textContent = "Import Trades";
+    }
+  }
+
   let html = `<thead><tr>
+    <th></th>
     <th>Date</th><th>Symbol</th><th>Side</th>
     <th>Qty</th><th>Entry</th><th>Exit</th><th>P&amp;L</th><th>Account</th>
   </tr></thead><tbody>`;
 
   const PREVIEW_MAX = 50;
-  rows.slice(0, PREVIEW_MAX).forEach(r => {
+  tagged.slice(0, PREVIEW_MAX).forEach(r => {
     const pClass = r.pnl >= 0 ? "pnl-pos" : "pnl-neg";
     const sClass = r.side === "long" ? "side-long" : "side-short";
-    const displayAcct = r.accountCSV || fallbackAcct || "Default";
-    html += `<tr>
+    const rowClass = r._isDup ? (dupMode === "skip" ? " import-row-skip" : " import-row-dup") : "";
+    const statusCell = r._isDup
+      ? (dupMode === "skip"
+          ? `<td class="import-status-cell skip" title="Will be skipped">⊘</td>`
+          : `<td class="import-status-cell dup" title="Duplicate — will be imported anyway">⚠</td>`)
+      : `<td class="import-status-cell ok" title="New trade">✓</td>`;
+    html += `<tr class="${rowClass}">
+      ${statusCell}
       <td>${r.date}</td>
       <td><strong>${r.symbol}</strong></td>
       <td><span class="${sClass}">${r.side.toUpperCase()}</span></td>
@@ -818,11 +903,11 @@ function renderImportPreview(rows) {
       <td>${fmtPrice(r.entry)}</td>
       <td>${fmtPrice(r.exit)}</td>
       <td class="${pClass}">${fmtPnl(r.pnl)}</td>
-      <td style="font-size:.78rem;color:var(--text-secondary);">${displayAcct}</td>
+      <td style="font-size:.78rem;color:var(--text-secondary);">${r._acct}</td>
     </tr>`;
   });
   if (rows.length > PREVIEW_MAX) {
-    html += `<tr><td colspan="7" style="text-align:center;color:var(--text-secondary);font-style:italic;padding:10px;">
+    html += `<tr><td colspan="9" style="text-align:center;color:var(--text-secondary);font-style:italic;padding:10px;">
       …and ${rows.length - PREVIEW_MAX} more rows not shown in preview
     </td></tr>`;
   }
@@ -845,13 +930,23 @@ function confirmImport() {
   }
 
   const mode = document.querySelector('input[name="import-mode"]:checked').value;
+  const dupModeEl = document.querySelector('input[name="dup-mode"]:checked');
+  const dupMode = dupModeEl ? dupModeEl.value : "skip";
   let stored = mode === "replace" ? {} : getImportedTrades();
 
-  // Group rows by date
+  // Build existing key set for duplicate detection
+  const existingKeys = buildExistingKeySet(mode);
+  let imported = 0, skipped = 0;
+
+  // Group rows by date, skipping duplicates if mode is "skip"
   parsedImportRows.forEach(r => {
-    if (!stored[r.date]) stored[r.date] = [];
     const account = r.accountCSV || fallbackAccount || "Default";
+    const mk = `${r.date}|${account}`;
+    const isDup = !!(existingKeys[mk] && existingKeys[mk].has(tradeKey(r)));
+    if (isDup && dupMode === "skip") { skipped++; return; }
+    if (!stored[r.date]) stored[r.date] = [];
     stored[r.date].push({ symbol: r.symbol, side: r.side, qty: r.qty, entry: r.entry, exit: r.exit, pnl: r.pnl, account });
+    imported++;
   });
 
   saveImportedTrades(stored);
@@ -862,7 +957,9 @@ function confirmImport() {
 
   // Success feedback
   const btn = document.getElementById("import-confirm-btn");
-  btn.textContent = "✓ Imported!";
+  btn.textContent = skipped > 0
+    ? `✓ Imported ${imported} (${skipped} skipped)`
+    : `✓ Imported ${imported}!`;
   btn.disabled = true;
   setTimeout(() => {
     closeImport();

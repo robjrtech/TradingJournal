@@ -281,11 +281,17 @@
       <!-- Error box -->
       <div class="import-error" id="import-error"></div>
 
-      <!-- Preview -->
+      <!-- Preview (Step 3) -->
       <div class="import-preview" id="import-preview">
         <div class="import-preview-title">
-          Preview
-          <span class="import-preview-count" id="import-preview-count"></span>
+          <div class="import-step-label" style="margin:0;">
+            <span class="import-step-num">3</span>
+            <label style="margin:0;">Preview</label>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="import-preview-count" id="import-preview-count"></span>
+            <span class="import-dup-badge" id="import-dup-badge" style="display:none;"></span>
+          </div>
         </div>
         <div class="preview-scroll">
           <table class="trade-table" id="import-preview-table"></table>
@@ -295,13 +301,24 @@
       <!-- Merge mode -->
       <div class="import-mode" id="import-mode-row" style="display:none;">
         <label>
-          <input type="radio" name="import-mode" value="merge" checked />
-          Merge with existing data
+          <input type="radio" name="import-mode" value="merge" checked onchange="refreshImportPreview()" />
+          Merge with existing
         </label>
         <label>
-          <input type="radio" name="import-mode" value="replace" />
-          Replace imported data only
+          <input type="radio" name="import-mode" value="replace" onchange="refreshImportPreview()" />
+          Replace imported data
         </label>
+        <div class="import-dup-toggle" id="import-dup-toggle" style="display:none;">
+          <label style="font-weight:600;color:var(--text-primary);font-size:.8rem;">Duplicates:</label>
+          <label>
+            <input type="radio" name="dup-mode" value="skip" checked onchange="refreshImportPreview()" />
+            Skip
+          </label>
+          <label>
+            <input type="radio" name="dup-mode" value="allow" onchange="refreshImportPreview()" />
+            Allow anyway
+          </label>
+        </div>
       </div>
 
       <!-- Actions -->
