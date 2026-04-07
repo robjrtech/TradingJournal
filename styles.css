@@ -1191,11 +1191,6 @@ main {
 .trade-table tr.clickable-row:hover td {
   background: rgba(79,70,229,.07);
 }
-.trade-table tr.clickable-row td:last-child::after {
-  content: " →";
-  opacity: .4;
-  font-size: .75rem;
-}
 
 /* ── Calendar page-header flex layout ── */
 .cal-page-header {
