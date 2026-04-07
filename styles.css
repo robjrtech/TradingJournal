@@ -1196,3 +1196,221 @@ main {
   opacity: .4;
   font-size: .75rem;
 }
+
+/* ── Calendar page-header flex layout ── */
+.cal-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* ── Account Filter Dropdown ── */
+.acct-filter-wrap {
+  position: relative;
+}
+
+.acct-filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: .875rem;
+  font-weight: 600;
+  padding: 8px 14px;
+  transition: background .15s, border-color .15s, box-shadow .15s;
+  white-space: nowrap;
+  box-shadow: var(--shadow);
+}
+
+.acct-filter-btn:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(79,70,229,.12);
+}
+
+.acct-filter-btn.active {
+  border-color: var(--accent);
+  background: rgba(79,70,229,.07);
+}
+
+.acct-filter-btn svg { color: var(--accent); flex-shrink: 0; }
+
+.acct-filter-badge {
+  background: var(--accent);
+  color: #fff;
+  border-radius: 999px;
+  font-size: .68rem;
+  font-weight: 700;
+  padding: 1px 7px;
+  min-width: 20px;
+  text-align: center;
+}
+
+.acct-chevron {
+  color: var(--text-secondary);
+  transition: transform .2s;
+}
+
+.acct-filter-btn.active .acct-chevron {
+  transform: rotate(180deg);
+}
+
+.acct-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 240px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+  z-index: 150;
+  overflow: hidden;
+  animation: dropdownIn .15s ease;
+}
+
+.acct-dropdown.open { display: block; }
+
+@keyframes dropdownIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.acct-dd-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.acct-dd-all-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: .72rem;
+  font-weight: 600;
+  padding: 3px 9px;
+  transition: background .15s;
+}
+
+.acct-dd-all-btn:hover {
+  background: rgba(79,70,229,.08);
+}
+
+.acct-dd-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  cursor: pointer;
+  font-size: .875rem;
+  transition: background .12s;
+}
+
+.acct-dd-item:hover {
+  background: var(--bg-surface-2);
+}
+
+.acct-dd-item input[type="checkbox"] {
+  accent-color: var(--accent);
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.acct-dd-name {
+  flex: 1;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.acct-dd-empty {
+  padding: 16px 14px;
+  font-size: .83rem;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+/* Colored dot used in dropdown and modal */
+.acct-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Smaller dot used inline in trade tables */
+.acct-dot-sm {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 5px;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+/* ── Import modal: Account Name field ── */
+.import-account-row {
+  margin-bottom: 20px;
+}
+
+.import-account-row label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .82rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.import-account-row label svg { color: var(--accent); }
+
+.import-account-row input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-surface-2);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: .875rem;
+  padding: 9px 12px;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+
+.import-account-row input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(79,70,229,.12);
+}
+
+.import-account-hint {
+  font-size: .75rem;
+  color: var(--text-secondary);
+  margin-top: 6px;
+}
+
+.import-account-hint code {
+  font-family: monospace;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: .72rem;
+}

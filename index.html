@@ -135,8 +135,29 @@
 
       <!-- ── Calendar Page ── -->
       <div id="page-calendar" class="page-section active">
-        <div class="page-header">
-          <h1>Trading Calendar</h1>
+        <div class="page-header cal-page-header">
+          <div>
+            <h1>Trading Calendar</h1>
+          </div>
+
+          <!-- Account Filter Dropdown -->
+          <div id="acct-filter-wrap" class="acct-filter-wrap">
+            <button id="acct-filter-btn" class="acct-filter-btn" onclick="toggleAccountDropdown()">
+              <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+              <span id="acct-filter-label">All Accounts</span>
+              <span id="acct-filter-badge" class="acct-filter-badge" style="display:none"></span>
+              <svg id="acct-filter-chevron" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" class="acct-chevron">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+
+            <div id="acct-dropdown" class="acct-dropdown">
+              <div id="acct-dropdown-list"></div>
+            </div>
+          </div>
         </div>
 
         <div class="panel">
@@ -216,6 +237,20 @@
         <span style="display:block;margin-top:4px;font-style:italic;">
           Example row: <code>2026-04-01, AAPL, long, 100, 182.40, 185.20, 280.00</code>
         </span>
+      </div>
+
+      <!-- Account Name field -->
+      <div class="import-account-row">
+        <label for="import-account-name">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          Account Name <span style="font-weight:400;color:var(--text-secondary)">(optional)</span>
+        </label>
+        <input type="text" id="import-account-name" placeholder="e.g. Apex, TD Ameritrade, Robinhood…"
+               oninput="refreshImportPreview()" />
+        <p class="import-account-hint">Tag these trades to a specific account. If your CSV has an <code>account</code> column, that takes precedence per row.</p>
       </div>
 
       <!-- Drop zone -->

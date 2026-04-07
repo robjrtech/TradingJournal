@@ -21,6 +21,146 @@ function saveImportedTrades(data) {
   localStorage.setItem("importedTrades", JSON.stringify(data));
 }
 
+/* ═══════════════════════════════════════════════
+   ACCOUNT MANAGEMENT
+═══════════════════════════════════════════════ */
+const ACCOUNT_COLORS = [
+  '#4f46e5','#0891b2','#059669','#d97706',
+  '#dc2626','#7c3aed','#db2777','#0284c7',
+  '#65a30d','#9333ea'
+];
+
+function getAllAccounts() {
+  const accounts = new Set();
+  const imported = getImportedTrades();
+  Object.values(imported).forEach(trades =>
+    trades.forEach(t => accounts.add(t.account || "Default")));
+  Object.values(sampleTradeData).forEach(trades =>
+    trades.forEach(t => accounts.add(t.account || "Default")));
+  if (accounts.size === 0) accounts.add("Default");
+  return accounts;
+}
+
+function getAccountColor(accountName, allAccountsSorted) {
+  const idx = (allAccountsSorted || [...getAllAccounts()].sort()).indexOf(accountName);
+  return ACCOUNT_COLORS[Math.max(idx, 0) % ACCOUNT_COLORS.length];
+}
+
+// null = all accounts; Set = specific subset
+function getActiveAccounts() {
+  try {
+    const raw = localStorage.getItem("activeAccounts");
+    if (raw === null) return null;
+    return new Set(JSON.parse(raw));
+  } catch { return null; }
+}
+
+function setActiveAccounts(v) {
+  if (v === null) localStorage.removeItem("activeAccounts");
+  else localStorage.setItem("activeAccounts", JSON.stringify([...v]));
+}
+
+function getFilteredTrades(dateKey) {
+  const trades = tradeData[dateKey] || [];
+  const activeSet = getActiveAccounts();
+  if (activeSet === null) return trades;
+  return trades.filter(t => activeSet.has(t.account || "Default"));
+}
+
+/* ── Account Dropdown ── */
+let acctDropdownOpen = false;
+
+function toggleAccountDropdown() {
+  acctDropdownOpen = !acctDropdownOpen;
+  const dd = document.getElementById("acct-dropdown");
+  const btn = document.getElementById("acct-filter-btn");
+  if (acctDropdownOpen) {
+    renderAccountDropdown();
+    dd.classList.add("open");
+    btn.classList.add("active");
+  } else {
+    dd.classList.remove("open");
+    btn.classList.remove("active");
+  }
+}
+
+function renderAccountDropdown() {
+  const container = document.getElementById("acct-dropdown-list");
+  if (!container) return;
+  const allAccountsSorted = [...getAllAccounts()].sort();
+  const activeSet = getActiveAccounts();
+  const allActive = activeSet === null;
+
+  let html = `<div class="acct-dd-header">
+    <span>Filter by Account</span>
+    <button class="acct-dd-all-btn" onclick="selectAllAccounts(${allActive})">${allActive ? "Deselect All" : "Select All"}</button>
+  </div>`;
+
+  if (allAccountsSorted.length === 0 ||
+      (allAccountsSorted.length === 1 && allAccountsSorted[0] === "Default")) {
+    html += `<div class="acct-dd-empty">Import trades to see accounts here.</div>`;
+  } else {
+    allAccountsSorted.forEach(acct => {
+      const isActive = allActive || activeSet.has(acct);
+      const color = getAccountColor(acct, allAccountsSorted);
+      const escaped = acct.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+      html += `<label class="acct-dd-item">
+        <input type="checkbox" ${isActive ? "checked" : ""} onchange="toggleAccount('${escaped}', this.checked)">
+        <span class="acct-dot" style="background:${color}"></span>
+        <span class="acct-dd-name">${acct}</span>
+      </label>`;
+    });
+  }
+
+  container.innerHTML = html;
+}
+
+function toggleAccount(accountName, checked) {
+  const allAccounts = getAllAccounts();
+  let activeSet = getActiveAccounts();
+  if (activeSet === null) activeSet = new Set([...allAccounts]);
+  if (checked) activeSet.add(accountName);
+  else activeSet.delete(accountName);
+  // Revert to null if everything is selected
+  if ([...allAccounts].every(a => activeSet.has(a))) setActiveAccounts(null);
+  else setActiveAccounts(activeSet);
+  renderAccountDropdown();
+  updateAcctFilterBtn();
+  renderCalendar();
+  updateDashStats();
+}
+
+function selectAllAccounts(currentlyAll) {
+  setActiveAccounts(currentlyAll ? new Set() : null);
+  renderAccountDropdown();
+  updateAcctFilterBtn();
+  renderCalendar();
+  updateDashStats();
+}
+
+function updateAcctFilterBtn() {
+  const label  = document.getElementById("acct-filter-label");
+  const badge  = document.getElementById("acct-filter-badge");
+  const chevron = document.getElementById("acct-filter-chevron");
+  if (!label) return;
+  const allAccounts = getAllAccounts();
+  const activeSet   = getActiveAccounts();
+  if (activeSet === null) {
+    label.textContent = "All Accounts";
+    badge.style.display = "none";
+  } else if (activeSet.size === 0) {
+    label.textContent = "No Accounts";
+    badge.style.display = "none";
+  } else if (activeSet.size === 1) {
+    label.textContent = [...activeSet][0];
+    badge.style.display = "none";
+  } else {
+    label.textContent = `${activeSet.size} of ${allAccounts.size} Accounts`;
+    badge.textContent = activeSet.size;
+    badge.style.display = "inline-flex";
+  }
+}
+
 function mergeTradeData() {
   // Reset to sample, then overlay imported trades
   Object.keys(tradeData).forEach(k => { if (!sampleTradeData[k]) delete tradeData[k]; });
@@ -136,7 +276,10 @@ function renderCalendar() {
       const mm = String(m + 1).padStart(2, "0");
       const dd = String(cell.day).padStart(2, "0");
       const dateKey = `${y}-${mm}-${dd}`;
-      const pnl = cell.outside ? null : dayPnl(dateKey);
+      const filteredTrades = cell.outside ? [] : getFilteredTrades(dateKey);
+      const pnl = filteredTrades.length > 0
+        ? filteredTrades.reduce((s, t) => s + t.pnl, 0)
+        : null;
 
       const div = document.createElement("div");
       div.className = "cal-day";
@@ -162,7 +305,7 @@ function renderCalendar() {
 
         const tradesEl = document.createElement("div");
         tradesEl.className = "cal-day-trades";
-        const cnt = tradeData[dateKey].length;
+        const cnt = filteredTrades.length;
         tradesEl.textContent = cnt + " trade" + (cnt !== 1 ? "s" : "");
         div.appendChild(tradesEl);
 
@@ -177,7 +320,7 @@ function renderCalendar() {
         weekHasTrades = true;
         monthPnl += pnl;
         tradingDays++;
-        totalTrades += tradeData[dateKey].length;
+        totalTrades += filteredTrades.length;
 
         div.addEventListener("click", () => openModal(dateKey));
       }
@@ -227,9 +370,20 @@ let currentModalDate = null;
 
 function openModal(dateKey) {
   currentModalDate = dateKey;
-  const trades = tradeData[dateKey] || [];
-  const pnl    = trades.reduce((s, t) => s + t.pnl, 0);
-  const notes  = getNotes();
+  // Build display list: filter by active accounts, keep original indices for detail nav
+  const allTrades = tradeData[dateKey] || [];
+  const activeSet = getActiveAccounts();
+  const displayTrades = activeSet === null
+    ? allTrades.map((t, i) => ({ t, origIdx: i }))
+    : allTrades.map((t, i) => ({ t, origIdx: i }))
+               .filter(({ t }) => activeSet.has(t.account || "Default"));
+  const pnl   = displayTrades.reduce((s, { t }) => s + t.pnl, 0);
+  const notes = getNotes();
+
+  // Determine if we should show the Account column
+  const allAccountsSorted = [...getAllAccounts()].sort();
+  const showAcctCol = allAccountsSorted.length > 1 ||
+    (allAccountsSorted.length === 1 && allAccountsSorted[0] !== "Default");
 
   // Date title
   const d = new Date(dateKey + "T00:00:00");
@@ -237,13 +391,14 @@ function openModal(dateKey) {
   document.getElementById("modal-date-title").textContent =
     d.toLocaleDateString("en-US", opts);
   document.getElementById("modal-date-sub").textContent =
-    trades.length + " trade" + (trades.length !== 1 ? "s" : "") + " taken";
+    displayTrades.length + " trade" + (displayTrades.length !== 1 ? "s" : "") + " shown";
 
   // Banner
   const banner = document.getElementById("modal-pnl-banner");
   banner.className = "modal-pnl-banner " + (pnl >= 0 ? "win" : "loss");
-  document.getElementById("modal-pnl-value").textContent = fmtPnl(pnl);
-  document.getElementById("modal-trade-count").textContent = trades.length;
+  document.getElementById("modal-pnl-value").textContent =
+    displayTrades.length ? fmtPnl(pnl) : "—";
+  document.getElementById("modal-trade-count").textContent = displayTrades.length;
 
   // Trade table
   const body = document.getElementById("modal-trade-body");
@@ -256,21 +411,28 @@ function openModal(dateKey) {
         <th>Entry</th>
         <th>Exit</th>
         <th>P&amp;L</th>
+        ${showAcctCol ? "<th>Account</th>" : ""}
       </tr>
     </thead>
     <tbody>`;
-  trades.forEach((t, idx) => {
-    const pnlClass = t.pnl >= 0 ? "pnl-pos" : "pnl-neg";
+  displayTrades.forEach(({ t, origIdx }) => {
+    const pnlClass  = t.pnl >= 0 ? "pnl-pos" : "pnl-neg";
     const sideClass = t.side === "long" ? "side-long" : "side-short";
-    html += `<tr class="clickable-row" onclick="openTradeDetail('${dateKey}', ${idx})" title="View trade detail">
+    const acctName  = t.account || "Default";
+    const acctColor = getAccountColor(acctName, allAccountsSorted);
+    html += `<tr class="clickable-row" onclick="openTradeDetail('${dateKey}', ${origIdx})" title="View trade detail">
       <td><strong>${t.symbol}</strong></td>
       <td><span class="${sideClass}">${t.side.toUpperCase()}</span></td>
       <td>${t.qty}</td>
       <td>${fmtPrice(t.entry)}</td>
       <td>${fmtPrice(t.exit)}</td>
       <td class="${pnlClass}">${fmtPnl(t.pnl)}</td>
+      ${showAcctCol ? `<td><span class="acct-dot-sm" style="background:${acctColor}"></span>${acctName}</td>` : ""}
     </tr>`;
   });
+  if (displayTrades.length === 0) {
+    html += `<tr><td colspan="${showAcctCol ? 7 : 6}" style="text-align:center;padding:20px;color:var(--text-secondary);">No trades for selected accounts on this day.</td></tr>`;
+  }
   html += `</tbody></table>`;
   body.innerHTML = html;
 
@@ -375,6 +537,8 @@ function openImport() {
   document.getElementById("drop-file-name").textContent = "No file selected";
   document.getElementById("import-mode-row").style.display = "none";
   document.getElementById("csv-file-input").value = "";
+  const acctInput = document.getElementById("import-account-name");
+  if (acctInput) acctInput.value = "";
   document.getElementById("import-overlay").classList.add("open");
   document.body.style.overflow = "hidden";
 }
@@ -443,6 +607,10 @@ function parseCSV(text) {
     exit:   ["exit", "exitprice", "exit_price", "exitpx", "close_price", "closeprice"],
     pnl:    ["pnl", "profit", "pl", "profitloss", "profit_loss", "net_pnl", "netpnl"]
   };
+  // Optional columns
+  const OPTIONAL_ALIASES = {
+    account: ["account", "accountname", "account_name", "broker", "firm", "portfolio"]
+  };
 
   // Map required fields using aliases
   const REQUIRED = Object.keys(ALIASES);
@@ -458,6 +626,14 @@ function parseCSV(text) {
       return;
     }
     idxMap[field] = i;
+  }
+  // Map optional columns
+  const optIdxMap = {};
+  for (const [field, aliases] of Object.entries(OPTIONAL_ALIASES)) {
+    for (const alias of aliases) {
+      const i = header.indexOf(alias);
+      if (i !== -1) { optIdxMap[field] = i; break; }
+    }
   }
 
   const rows = [];
@@ -477,6 +653,9 @@ function parseCSV(text) {
     const entry     = parseFloat(cols[idxMap["entry"]]);
     const exit      = parseFloat(cols[idxMap["exit"]]);
     const pnl       = parseFloat(cols[idxMap["pnl"]]);
+    const accountCSV = optIdxMap["account"] !== undefined
+      ? (cols[optIdxMap["account"]] || "").trim().replace(/['"]/g,"")
+      : "";
 
     // Normalize date to YYYY-MM-DD
     function normalizeDate(raw) {
@@ -528,7 +707,7 @@ function parseCSV(text) {
       continue;
     }
 
-    rows.push({ date: dateNorm, symbol, side: sideNorm, qty, entry, exit, pnl });
+    rows.push({ date: dateNorm, symbol, side: sideNorm, qty, entry, exit, pnl, accountCSV });
   }
 
   if (errors.length > 0) {
@@ -567,19 +746,25 @@ function showImportError(msg) {
   el.classList.add("visible");
 }
 
+function refreshImportPreview() {
+  if (parsedImportRows.length > 0) renderImportPreview(parsedImportRows);
+}
+
 function renderImportPreview(rows) {
   const table = document.getElementById("import-preview-table");
   document.getElementById("import-preview-count").textContent = rows.length + " trade" + (rows.length !== 1 ? "s" : "");
 
+  const fallbackAcct = (document.getElementById("import-account-name") || {}).value || "";
   let html = `<thead><tr>
     <th>Date</th><th>Symbol</th><th>Side</th>
-    <th>Qty</th><th>Entry</th><th>Exit</th><th>P&amp;L</th>
+    <th>Qty</th><th>Entry</th><th>Exit</th><th>P&amp;L</th><th>Account</th>
   </tr></thead><tbody>`;
 
   const PREVIEW_MAX = 50;
   rows.slice(0, PREVIEW_MAX).forEach(r => {
     const pClass = r.pnl >= 0 ? "pnl-pos" : "pnl-neg";
     const sClass = r.side === "long" ? "side-long" : "side-short";
+    const displayAcct = r.accountCSV || fallbackAcct || "Default";
     html += `<tr>
       <td>${r.date}</td>
       <td><strong>${r.symbol}</strong></td>
@@ -588,6 +773,7 @@ function renderImportPreview(rows) {
       <td>${fmtPrice(r.entry)}</td>
       <td>${fmtPrice(r.exit)}</td>
       <td class="${pClass}">${fmtPnl(r.pnl)}</td>
+      <td style="font-size:.78rem;color:var(--text-secondary);">${displayAcct}</td>
     </tr>`;
   });
   if (rows.length > PREVIEW_MAX) {
@@ -605,17 +791,20 @@ function confirmImport() {
 
   const mode = document.querySelector('input[name="import-mode"]:checked').value;
   let stored = mode === "replace" ? {} : getImportedTrades();
+  const fallbackAccount = (document.getElementById("import-account-name") || {}).value || "";
 
   // Group rows by date
   parsedImportRows.forEach(r => {
     if (!stored[r.date]) stored[r.date] = [];
-    stored[r.date].push({ symbol: r.symbol, side: r.side, qty: r.qty, entry: r.entry, exit: r.exit, pnl: r.pnl });
+    const account = r.accountCSV || fallbackAccount || "Default";
+    stored[r.date].push({ symbol: r.symbol, side: r.side, qty: r.qty, entry: r.entry, exit: r.exit, pnl: r.pnl, account });
   });
 
   saveImportedTrades(stored);
   mergeTradeData();
   renderCalendar();
   updateDashStats();
+  updateAcctFilterBtn();
 
   // Success feedback
   const btn = document.getElementById("import-confirm-btn");
@@ -827,7 +1016,19 @@ document.addEventListener("keydown", e => {
   }
 });
 
+/* Close account dropdown when clicking outside */
+document.addEventListener("click", e => {
+  if (acctDropdownOpen && !e.target.closest("#acct-filter-wrap")) {
+    acctDropdownOpen = false;
+    const dd  = document.getElementById("acct-dropdown");
+    const btn = document.getElementById("acct-filter-btn");
+    if (dd)  dd.classList.remove("open");
+    if (btn) btn.classList.remove("active");
+  }
+});
+
 /* ── Init ── */
 mergeTradeData();   // overlay any previously-imported data
 renderCalendar();
 updateDashStats();
+updateAcctFilterBtn();
