@@ -1321,3 +1321,367 @@ mergeTradeData();   // overlay any previously-imported data
 renderCalendar();
 updateDashStats();
 updateAcctFilterBtn();
+
+/* ═══════════════════════════════════════════════
+   ANALYTICS PAGE INIT (populate on tab switch)
+═══════════════════════════════════════════════ */
+document.querySelectorAll(".sidebar-item[data-page='analytics']").forEach(item => {
+  item.addEventListener("click", () => {
+    populateMCAccountFilter();
+    renderWFBenchmarks();
+  });
+});
+
+/* ═══════════════════════════════════════════════
+   MONTE CARLO SIMULATION
+   Randomly reshuffles the trade P&L sequence N times
+   to model the range of possible outcomes.
+═══════════════════════════════════════════════ */
+function populateMCAccountFilter() {
+  const sel = document.getElementById("mc-account");
+  if (!sel) return;
+  const accounts = [...getAllAccounts()].sort();
+  sel.innerHTML = `<option value="">All Accounts</option>`;
+  accounts.filter(a => a !== "Default").forEach(a => {
+    const opt = document.createElement("option");
+    opt.value = a; opt.textContent = a;
+    sel.appendChild(opt);
+  });
+}
+
+function runMonteCarloSim() {
+  const startBal  = parseFloat(document.getElementById("mc-balance").value) || 100000;
+  const numSims   = Math.min(parseInt(document.getElementById("mc-sims").value) || 1000, 10000);
+  const acctFilter = document.getElementById("mc-account").value;
+
+  // Collect P&Ls from all trades (filtered by account if selected)
+  const pnls = [];
+  Object.values(tradeData).forEach(trades =>
+    trades.forEach(t => {
+      if (!acctFilter || (t.account || "Default") === acctFilter) pnls.push(t.pnl);
+    })
+  );
+
+  if (pnls.length < 10) {
+    alert("Need at least 10 trades to run a simulation. Import some trades first.");
+    return;
+  }
+
+  // Run simulations
+  const results = [];
+  for (let i = 0; i < numSims; i++) {
+    // Fisher-Yates shuffle
+    const seq = [...pnls];
+    for (let j = seq.length - 1; j > 0; j--) {
+      const k = Math.floor(Math.random() * (j + 1));
+      [seq[j], seq[k]] = [seq[k], seq[j]];
+    }
+    let bal = startBal, peak = startBal, maxDD = 0;
+    for (const p of seq) {
+      bal += p;
+      if (bal > peak) peak = bal;
+      const dd = peak > 0 ? (peak - bal) / peak : 0;
+      if (dd > maxDD) maxDD = dd;
+    }
+    results.push({ finalBal: bal, maxDD, profit: bal > startBal });
+  }
+
+  // Sort by final balance for percentile reads
+  results.sort((a, b) => a.finalBal - b.finalBal);
+  const p  = pct => results[Math.max(0, Math.floor(numSims * pct))].finalBal;
+  const p5  = p(0.05), p50 = p(0.50), p95 = p(0.95);
+  const probProfit = results.filter(r => r.profit).length / numSims * 100;
+
+  const maxDDs = results.map(r => r.maxDD).sort((a, b) => a - b);
+  const dd = pct => maxDDs[Math.max(0, Math.floor(numSims * pct))] * 100;
+
+  // Populate stat cards
+  const el = id => document.getElementById(id);
+  el("mc-prob-profit").textContent = probProfit.toFixed(1) + "%";
+  el("mc-p5").textContent  = fmtPnl(p5  - startBal);
+  el("mc-p50").textContent = fmtPnl(p50 - startBal);
+  el("mc-p95").textContent = fmtPnl(p95 - startBal);
+  el("mc-dd5").textContent  = dd(0.05).toFixed(1) + "%";
+  el("mc-dd50").textContent = dd(0.50).toFixed(1) + "%";
+  el("mc-dd95").textContent = dd(0.95).toFixed(1) + "%";
+  el("mc-trades").textContent = pnls.length;
+
+  el("mc-results").style.display = "block";
+
+  // Draw histogram
+  requestAnimationFrame(() => drawMCHistogram(results.map(r => r.finalBal), startBal));
+}
+
+function drawMCHistogram(finalBals, startBal) {
+  const canvas = document.getElementById("mc-chart");
+  if (!canvas) return;
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.parentElement.clientWidth || 700;
+  const H = 220;
+  canvas.style.width  = W + "px";
+  canvas.style.height = H + "px";
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  const ctx = canvas.getContext("2d");
+  ctx.scale(dpr, dpr);
+
+  const min = Math.min(...finalBals);
+  const max = Math.max(...finalBals);
+  const BINS = 60;
+  const binW = (max - min) / BINS || 1;
+  const counts = new Array(BINS).fill(0);
+  finalBals.forEach(v => {
+    const b = Math.min(Math.floor((v - min) / binW), BINS - 1);
+    counts[b]++;
+  });
+  const maxCount = Math.max(...counts);
+  const PAD = { t: 10, b: 28, l: 4, r: 4 };
+  const chartW = W - PAD.l - PAD.r;
+  const chartH = H - PAD.t - PAD.b;
+  const barW   = chartW / BINS;
+
+  ctx.clearRect(0, 0, W, H);
+
+  counts.forEach((count, i) => {
+    const x  = PAD.l + i * barW;
+    const bh = (count / maxCount) * chartH;
+    const binMid = min + (i + 0.5) * binW;
+    ctx.fillStyle = binMid >= startBal
+      ? "rgba(5,150,105,.75)"
+      : "rgba(220,38,38,.75)";
+    ctx.fillRect(x, PAD.t + chartH - bh, barW - 1, bh);
+  });
+
+  // Break-even line
+  const baseX = PAD.l + ((startBal - min) / (max - min)) * chartW;
+  ctx.save();
+  ctx.strokeStyle = "rgba(99,102,241,.9)";
+  ctx.lineWidth = 2;
+  ctx.setLineDash([5, 4]);
+  ctx.beginPath();
+  ctx.moveTo(baseX, PAD.t);
+  ctx.lineTo(baseX, PAD.t + chartH);
+  ctx.stroke();
+  ctx.restore();
+
+  // X-axis labels
+  ctx.fillStyle = "var(--text-secondary, #6b7280)";
+  ctx.font = `11px system-ui`;
+  ctx.textAlign = "left";
+  ctx.fillText("$" + (min / 1000).toFixed(0) + "k", PAD.l + 2, H - 6);
+  ctx.textAlign = "right";
+  ctx.fillText("$" + (max / 1000).toFixed(0) + "k", W - PAD.r - 2, H - 6);
+  ctx.textAlign = "center";
+  ctx.fillStyle = "rgba(99,102,241,.9)";
+  ctx.fillText("Break Even", Math.max(50, Math.min(baseX, W - 55)), H - 6);
+}
+
+/* ── Monte Carlo image upload ── */
+function mcDragOver(e) {
+  e.preventDefault();
+  document.getElementById("mc-drop-zone").classList.add("drag-over");
+}
+function mcDragLeave() {
+  document.getElementById("mc-drop-zone").classList.remove("drag-over");
+}
+function mcDrop(e) {
+  e.preventDefault();
+  mcDragLeave();
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith("image/")) loadMCImage(file);
+}
+function mcImageSelect(e) {
+  const file = e.target.files[0];
+  if (file) loadMCImage(file);
+}
+function loadMCImage(file) {
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = document.getElementById("mc-img-preview");
+    img.src = ev.target.result;
+    img.style.display = "block";
+    document.getElementById("mc-drop-zone").style.display = "none";
+    document.getElementById("mc-remove-img-btn").style.display = "inline-flex";
+    document.getElementById("mc-drop-label").textContent = file.name;
+    // Persist in localStorage
+    localStorage.setItem("mcImage", ev.target.result);
+  };
+  reader.readAsDataURL(file);
+}
+function removeMCImage() {
+  document.getElementById("mc-img-preview").src = "";
+  document.getElementById("mc-img-preview").style.display = "none";
+  document.getElementById("mc-drop-zone").style.display = "block";
+  document.getElementById("mc-remove-img-btn").style.display = "none";
+  document.getElementById("mc-drop-label").textContent = "Click or drag an image to attach a simulation chart";
+  document.getElementById("mc-img-input").value = "";
+  localStorage.removeItem("mcImage");
+}
+// Restore saved MC image on load
+(function restoreMCImage() {
+  const saved = localStorage.getItem("mcImage");
+  if (!saved) return;
+  const img = document.getElementById("mc-img-preview");
+  if (!img) return;
+  img.src = saved;
+  img.style.display = "block";
+  const dz = document.getElementById("mc-drop-zone");
+  if (dz) dz.style.display = "none";
+  const rb = document.getElementById("mc-remove-img-btn");
+  if (rb) rb.style.display = "inline-flex";
+})();
+
+/* ═══════════════════════════════════════════════
+   WALK-FORWARD TRACKING
+   Compares user-entered backtest benchmarks against
+   live stats auto-calculated from tagged trades.
+═══════════════════════════════════════════════ */
+function getWFBenchmarks() {
+  try { return JSON.parse(localStorage.getItem("wfBenchmarks") || "{}"); } catch { return {}; }
+}
+function saveWFBenchmarks(data) {
+  localStorage.setItem("wfBenchmarks", JSON.stringify(data));
+}
+
+function getLiveStrategyStats(strategyName) {
+  const extras = getTradeExtras();
+  const pnls = [];
+  Object.entries(tradeData).forEach(([date, trades]) => {
+    trades.forEach((t, idx) => {
+      const extra = extras[`${date}_${idx}`];
+      if (extra && extra.strategy === strategyName) pnls.push(t.pnl);
+    });
+  });
+  if (pnls.length === 0) return null;
+  const wins   = pnls.filter(p => p > 0);
+  const losses = pnls.filter(p => p < 0);
+  const gw = wins.reduce((s, v) => s + v, 0);
+  const gl = Math.abs(losses.reduce((s, v) => s + v, 0));
+  return {
+    total:        pnls.length,
+    winRate:      (wins.length / pnls.length) * 100,
+    avgWin:       wins.length   ? gw / wins.length   : 0,
+    avgLoss:      losses.length ? gl / losses.length : 0,
+    profitFactor: gl > 0 ? gw / gl : gw > 0 ? 999 : 0,
+  };
+}
+
+function renderWFBenchmarks() {
+  const container = document.getElementById("wf-benchmarks");
+  if (!container) return;
+  const benchmarks = getWFBenchmarks();
+  const keys = Object.keys(benchmarks);
+  if (keys.length === 0) {
+    container.innerHTML = `<p class="wf-empty">No benchmarks added yet. Click <strong>+ Add Strategy Benchmark</strong> to get started.</p>`;
+    return;
+  }
+  container.innerHTML = keys.map(s => renderWFCard(s, benchmarks[s], getLiveStrategyStats(s))).join("");
+}
+
+function renderWFCard(strategy, bt, live) {
+  function deltaCell(liveVal, btVal, higherBetter) {
+    if (live === null) return `<span class="wf-na">—</span>`;
+    const diff = liveVal - btVal;
+    const pct  = btVal !== 0 ? (diff / Math.abs(btVal)) * 100 : 0;
+    const good = higherBetter ? diff >= 0 : diff <= 0;
+    const cls  = Math.abs(pct) < 5 ? "wf-neutral" : good ? "wf-good" : "wf-bad";
+    const sign = diff >= 0 ? "+" : "";
+    return `<span class="${cls}">${sign}${diff.toFixed(1)} <small>(${sign}${pct.toFixed(0)}%)</small></span>`;
+  }
+
+  const liveTrades = live ? live.total : 0;
+  const esc = strategy.replace(/'/g, "\\'");
+  const lowSample = liveTrades > 0 && liveTrades < 30;
+
+  return `
+  <div class="wf-card">
+    <div class="wf-card-header">
+      <span class="wf-strategy-name">${strategy}</span>
+      <div class="wf-card-actions">
+        <span class="wf-live-badge ${liveTrades === 0 ? 'no-data' : ''}">${liveTrades === 0 ? 'No live data' : liveTrades + ' live trade' + (liveTrades !== 1 ? 's' : '')}</span>
+        <button class="wf-delete-btn" onclick="deleteWFBenchmark('${esc}')" title="Remove">✕</button>
+      </div>
+    </div>
+    ${lowSample ? `<p class="wf-warning">⚠ Small sample (${liveTrades} trade${liveTrades !== 1 ? 's' : ''}) — ${liveTrades < 10 ? 'add 10+ trades' : '30+ recommended'} for reliable comparison.</p>` : ""}
+    <div class="wf-table-wrap">
+      <table class="wf-table">
+        <thead><tr><th>Metric</th><th>Backtest</th><th>Live</th><th>Delta</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Win Rate</td>
+            <td>${bt.winRate}%</td>
+            <td>${live ? live.winRate.toFixed(1) + "%" : "—"}</td>
+            <td>${deltaCell(live?.winRate, bt.winRate, true)}</td>
+          </tr>
+          <tr>
+            <td>Avg Win</td>
+            <td>$${parseFloat(bt.avgWin).toFixed(0)}</td>
+            <td>${live ? "$" + live.avgWin.toFixed(0) : "—"}</td>
+            <td>${deltaCell(live?.avgWin, bt.avgWin, true)}</td>
+          </tr>
+          <tr>
+            <td>Avg Loss</td>
+            <td>$${parseFloat(bt.avgLoss).toFixed(0)}</td>
+            <td>${live ? "$" + live.avgLoss.toFixed(0) : "—"}</td>
+            <td>${deltaCell(live?.avgLoss, bt.avgLoss, false)}</td>
+          </tr>
+          <tr>
+            <td>Profit Factor</td>
+            <td>${parseFloat(bt.profitFactor).toFixed(2)}</td>
+            <td>${live ? live.profitFactor.toFixed(2) : "—"}</td>
+            <td>${deltaCell(live?.profitFactor, bt.profitFactor, true)}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    ${bt.sampleSize ? `<p class="wf-bt-note">Backtest sample: ${bt.sampleSize} trades</p>` : ""}
+  </div>`;
+}
+
+function openAddBenchmark() {
+  const sel = document.getElementById("wf-strategy-select");
+  const strategies = getStrategies();
+  sel.innerHTML = `<option value="">— Select strategy —</option>`;
+  strategies.forEach(s => {
+    const o = document.createElement("option");
+    o.value = s; o.textContent = s;
+    sel.appendChild(o);
+  });
+  document.getElementById("wf-add-modal").classList.add("open");
+  document.body.style.overflow = "hidden";
+}
+
+function closeAddBenchmark() {
+  document.getElementById("wf-add-modal").classList.remove("open");
+  document.body.style.overflow = "";
+  document.getElementById("wf-add-form").reset();
+}
+
+function closeAddBenchmarkOnOverlay(e) {
+  if (e.target === document.getElementById("wf-add-modal")) closeAddBenchmark();
+}
+
+function saveWFBenchmark() {
+  const strategy = document.getElementById("wf-strategy-select").value;
+  if (!strategy) { alert("Please select a strategy."); return; }
+  const winRate      = parseFloat(document.getElementById("wf-bt-winrate").value);
+  const avgWin       = parseFloat(document.getElementById("wf-bt-avgwin").value);
+  const avgLoss      = parseFloat(document.getElementById("wf-bt-avgloss").value);
+  const profitFactor = parseFloat(document.getElementById("wf-bt-pf").value);
+  const sampleSize   = parseInt(document.getElementById("wf-bt-sample").value) || 0;
+  if ([winRate, avgWin, avgLoss, profitFactor].some(isNaN)) {
+    alert("Please fill in all required fields."); return;
+  }
+  const benchmarks = getWFBenchmarks();
+  benchmarks[strategy] = { winRate, avgWin, avgLoss, profitFactor, sampleSize };
+  saveWFBenchmarks(benchmarks);
+  closeAddBenchmark();
+  renderWFBenchmarks();
+}
+
+function deleteWFBenchmark(strategy) {
+  const benchmarks = getWFBenchmarks();
+  delete benchmarks[strategy];
+  saveWFBenchmarks(benchmarks);
+  renderWFBenchmarks();
+}

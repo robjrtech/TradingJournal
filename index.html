@@ -70,7 +70,7 @@
       <div class="sidebar-item">
         <span>📝</span> Trade Log
       </div>
-      <div class="sidebar-item">
+      <div class="sidebar-item" data-page="analytics">
         <span>📈</span> Analytics
       </div>
       <div class="sidebar-item" data-page="calendar">
@@ -175,6 +175,112 @@
 
       <!-- ── Calendar Page (redirects to Dashboard calendar) ── -->
       <div id="page-calendar" class="page-section"></div>
+
+      <!-- ── Analytics Page ── -->
+      <div id="page-analytics" class="page-section">
+        <div class="page-header">
+          <h1>Analytics</h1>
+          <p>Advanced tools to stress-test and evaluate your trading strategies.</p>
+        </div>
+
+        <!-- ════ Monte Carlo Simulation ════ -->
+        <div class="panel">
+          <div class="panel-title">🎲 Monte Carlo Simulation</div>
+          <p class="panel-desc">Randomly reshuffles your trade sequence across thousands of simulations to model the full range of possible outcomes — revealing hidden risk that averages don't show.</p>
+
+          <div class="mc-config">
+            <div class="mc-field">
+              <label>Starting Balance ($)</label>
+              <input type="number" id="mc-balance" value="100000" min="1" />
+            </div>
+            <div class="mc-field">
+              <label>Simulations</label>
+              <input type="number" id="mc-sims" value="1000" min="100" max="10000" step="100" />
+            </div>
+            <div class="mc-field">
+              <label>Account</label>
+              <select id="mc-account"></select>
+            </div>
+            <button class="btn-primary mc-run-btn" onclick="runMonteCarloSim()">▶ Run Simulation</button>
+          </div>
+
+          <!-- Results (hidden until run) -->
+          <div id="mc-results" style="display:none;">
+            <div class="mc-stats-grid">
+              <div class="mc-stat">
+                <div class="mc-stat-label">Prob. of Profit</div>
+                <div class="mc-stat-value accent" id="mc-prob-profit">—</div>
+              </div>
+              <div class="mc-stat">
+                <div class="mc-stat-label">Worst Case (5th %ile)</div>
+                <div class="mc-stat-value loss" id="mc-p5">—</div>
+              </div>
+              <div class="mc-stat">
+                <div class="mc-stat-label">Median Outcome (50th)</div>
+                <div class="mc-stat-value" id="mc-p50">—</div>
+              </div>
+              <div class="mc-stat">
+                <div class="mc-stat-label">Best Case (95th %ile)</div>
+                <div class="mc-stat-value win" id="mc-p95">—</div>
+              </div>
+              <div class="mc-stat">
+                <div class="mc-stat-label">Max Drawdown 5th %ile</div>
+                <div class="mc-stat-value" id="mc-dd5">—</div>
+              </div>
+              <div class="mc-stat">
+                <div class="mc-stat-label">Max Drawdown Median</div>
+                <div class="mc-stat-value" id="mc-dd50">—</div>
+              </div>
+              <div class="mc-stat">
+                <div class="mc-stat-label">Max Drawdown 95th %ile</div>
+                <div class="mc-stat-value loss" id="mc-dd95">—</div>
+              </div>
+              <div class="mc-stat">
+                <div class="mc-stat-label">Trades Used</div>
+                <div class="mc-stat-value" id="mc-trades">—</div>
+              </div>
+            </div>
+            <div class="mc-chart-wrap">
+              <div class="mc-chart-label">Distribution of Final Balances across all simulations</div>
+              <canvas id="mc-chart"></canvas>
+              <div class="mc-chart-legend">
+                <span class="mc-legend-item win">■ Profitable</span>
+                <span class="mc-legend-item loss">■ Loss</span>
+                <span class="mc-legend-item accent">— Break Even</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Image upload section -->
+          <div class="mc-image-section">
+            <div class="mc-image-header">
+              <span>📎 Attach Simulation Image</span>
+              <button class="mc-remove-img-btn" id="mc-remove-img-btn" onclick="removeMCImage()" style="display:none;">Remove</button>
+            </div>
+            <div class="mc-drop-zone" id="mc-drop-zone"
+                 onclick="document.getElementById('mc-img-input').click()"
+                 ondragover="mcDragOver(event)" ondragleave="mcDragLeave(event)" ondrop="mcDrop(event)">
+              <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="margin:0 auto 8px;display:block;color:var(--text-secondary)">
+                <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+              <p id="mc-drop-label">Click or drag an image to attach a simulation chart</p>
+            </div>
+            <input type="file" id="mc-img-input" accept="image/*" style="display:none;" onchange="mcImageSelect(event)" />
+            <img id="mc-img-preview" class="mc-img-preview" style="display:none;" />
+          </div>
+        </div>
+
+        <!-- ════ Walk-Forward Tracking ════ -->
+        <div class="panel">
+          <div class="panel-title">📊 Walk-Forward Tracking</div>
+          <p class="panel-desc">Compare your backtest benchmarks against live strategy performance. Trades must be tagged with a Strategy in the Trade Detail panel to appear here.</p>
+
+          <button class="btn-primary" onclick="openAddBenchmark()" style="margin-bottom:20px;">+ Add Strategy Benchmark</button>
+
+          <div id="wf-benchmarks"></div>
+        </div>
+      </div>
 
 
     </main>
@@ -474,6 +580,51 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- ── Walk-Forward: Add Benchmark Modal ── -->
+  <div class="wf-modal-overlay" id="wf-add-modal" onclick="closeAddBenchmarkOnOverlay(event)">
+    <div class="wf-modal">
+      <div class="wf-modal-header">
+        <h3>Add Strategy Benchmark</h3>
+        <button class="modal-close" onclick="closeAddBenchmark()">✕</button>
+      </div>
+      <form id="wf-add-form" onsubmit="event.preventDefault(); saveWFBenchmark();">
+        <div class="wf-form-field">
+          <label>Strategy</label>
+          <select id="wf-strategy-select" required>
+            <option value="">— Select strategy —</option>
+          </select>
+        </div>
+        <p class="wf-form-section-label">Backtest Results</p>
+        <div class="wf-form-grid">
+          <div class="wf-form-field">
+            <label>Win Rate (%)</label>
+            <input type="number" id="wf-bt-winrate" placeholder="e.g. 62" min="0" max="100" step="0.1" required />
+          </div>
+          <div class="wf-form-field">
+            <label>Avg Win ($)</label>
+            <input type="number" id="wf-bt-avgwin" placeholder="e.g. 250" min="0" step="0.01" required />
+          </div>
+          <div class="wf-form-field">
+            <label>Avg Loss ($)</label>
+            <input type="number" id="wf-bt-avgloss" placeholder="e.g. 120" min="0" step="0.01" required />
+          </div>
+          <div class="wf-form-field">
+            <label>Profit Factor</label>
+            <input type="number" id="wf-bt-pf" placeholder="e.g. 1.8" min="0" step="0.01" required />
+          </div>
+          <div class="wf-form-field">
+            <label>Sample Size (trades)</label>
+            <input type="number" id="wf-bt-sample" placeholder="e.g. 200" min="1" />
+          </div>
+        </div>
+        <div class="wf-modal-actions">
+          <button type="button" class="btn-secondary" onclick="closeAddBenchmark()">Cancel</button>
+          <button type="submit" class="btn-primary">Save Benchmark</button>
+        </div>
+      </form>
     </div>
   </div>
 

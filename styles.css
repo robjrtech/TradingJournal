@@ -1746,3 +1746,570 @@ tr:hover .trade-kebab-btn {
   cursor: default;
   font-size: .75rem;
 }
+
+/* ── Analytics Page ── */
+#page-analytics {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.analytics-section-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 16px 0;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.analytics-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px;
+  box-shadow: var(--shadow);
+}
+
+/* ── Monte Carlo ── */
+.mc-config {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: flex-end;
+  margin-bottom: 22px;
+}
+
+.mc-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 140px;
+}
+
+.mc-field label {
+  font-size: .75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.mc-field input,
+.mc-field select {
+  padding: 8px 11px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: .88rem;
+  outline: none;
+  transition: border .15s;
+}
+
+.mc-field input:focus,
+.mc-field select:focus {
+  border-color: var(--accent);
+}
+
+.mc-run-btn {
+  padding: 9px 22px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: .88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s;
+  align-self: flex-end;
+  white-space: nowrap;
+}
+
+.mc-run-btn:hover {
+  background: var(--accent-hover);
+}
+
+.mc-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.mc-stat {
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mc-stat-label {
+  font-size: .72rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.mc-stat-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.mc-stat-value.positive { color: #16a34a; }
+.mc-stat-value.negative { color: #dc2626; }
+
+.mc-chart-wrap {
+  position: relative;
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.mc-chart-wrap canvas {
+  width: 100%;
+  border-radius: 8px;
+  display: block;
+}
+
+.mc-chart-label {
+  text-align: center;
+  font-size: .75rem;
+  color: var(--text-secondary);
+  margin-top: 6px;
+}
+
+.mc-chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.mc-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .78rem;
+  color: var(--text-secondary);
+}
+
+.mc-legend-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+/* MC Image Upload */
+.mc-image-section {
+  margin-top: 22px;
+  border-top: 1px solid var(--border);
+  padding-top: 18px;
+}
+
+.mc-image-section-label {
+  font-size: .78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  margin-bottom: 10px;
+}
+
+.mc-drop-zone {
+  border: 2px dashed var(--border);
+  border-radius: 10px;
+  padding: 28px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+  color: var(--text-secondary);
+  font-size: .85rem;
+}
+
+.mc-drop-zone:hover,
+.mc-drop-zone.drag-over {
+  border-color: var(--accent);
+  background: rgba(79,70,229,.05);
+}
+
+.mc-drop-zone svg {
+  display: block;
+  margin: 0 auto 8px;
+  opacity: .5;
+}
+
+.mc-img-preview {
+  position: relative;
+  display: inline-block;
+  margin-top: 12px;
+}
+
+.mc-img-preview img {
+  max-width: 100%;
+  max-height: 340px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  display: block;
+}
+
+.mc-img-remove {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: rgba(0,0,0,.55);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  font-size: .9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .12s;
+}
+
+.mc-img-remove:hover {
+  background: rgba(220,38,38,.8);
+}
+
+/* ── Walk-Forward ── */
+.wf-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.wf-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: .83rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s;
+}
+
+.wf-add-btn:hover {
+  background: var(--accent-hover);
+}
+
+.wf-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-secondary);
+  font-size: .9rem;
+}
+
+.wf-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.wf-card {
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.wf-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-surface);
+}
+
+.wf-strategy-name {
+  font-size: .98rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.wf-live-badge {
+  font-size: .7rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 20px;
+  background: rgba(22,163,74,.15);
+  color: #16a34a;
+  margin-left: 10px;
+}
+
+.wf-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wf-delete-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 1rem;
+  padding: 4px 6px;
+  border-radius: 5px;
+  transition: color .12s, background .12s;
+  display: flex;
+  align-items: center;
+}
+
+.wf-delete-btn:hover {
+  color: #dc2626;
+  background: rgba(220,38,38,.08);
+}
+
+.wf-table-wrap {
+  overflow-x: auto;
+  padding: 14px 18px;
+}
+
+.wf-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .83rem;
+}
+
+.wf-table th {
+  text-align: left;
+  font-size: .72rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  padding: 0 10px 8px 0;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.wf-table td {
+  padding: 10px 10px 10px 0;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.wf-table tr:last-child td {
+  border-bottom: none;
+}
+
+.wf-table td:first-child {
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: .75rem;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+
+.wf-bt-value {
+  color: var(--text-secondary);
+}
+
+.wf-live-value {
+  font-weight: 700;
+}
+
+.wf-delta {
+  font-size: .78rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.wf-good  .wf-delta { background: rgba(22,163,74,.12);  color: #16a34a; }
+.wf-bad   .wf-delta { background: rgba(220,38,38,.1);   color: #dc2626; }
+.wf-neutral .wf-delta { background: var(--bg-surface);  color: var(--text-secondary); border: 1px solid var(--border); }
+
+.wf-na {
+  color: var(--text-secondary);
+  font-style: italic;
+  font-size: .8rem;
+}
+
+.wf-warning {
+  font-size: .75rem;
+  color: var(--text-secondary);
+  padding: 8px 18px 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.wf-bt-note {
+  font-size: .72rem;
+  color: var(--text-secondary);
+  padding: 0 18px 12px;
+  font-style: italic;
+}
+
+/* Walk-Forward Add Modal */
+.wf-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--modal-overlay);
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.wf-modal-overlay.open {
+  display: flex;
+}
+
+.wf-modal {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 28px;
+  width: 480px;
+  max-width: calc(100vw - 32px);
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-md);
+}
+
+.wf-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+
+.wf-modal-header h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.wf-modal-close {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 1.3rem;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 5px;
+  transition: color .12s;
+}
+
+.wf-modal-close:hover {
+  color: var(--text-primary);
+}
+
+.wf-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 14px;
+}
+
+.wf-form-field label {
+  font-size: .75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.wf-form-field input,
+.wf-form-field select {
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: .88rem;
+  outline: none;
+  transition: border .15s;
+}
+
+.wf-form-field input:focus,
+.wf-form-field select:focus {
+  border-color: var(--accent);
+}
+
+.wf-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 16px;
+}
+
+.wf-form-section-label {
+  font-size: .72rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin: 16px 0 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+  grid-column: 1 / -1;
+}
+
+.wf-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.wf-modal-cancel {
+  padding: 9px 18px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: .88rem;
+  cursor: pointer;
+  transition: background .12s;
+}
+
+.wf-modal-cancel:hover {
+  background: var(--bg-surface-2);
+}
+
+.wf-modal-save {
+  padding: 9px 22px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: .88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s;
+}
+
+.wf-modal-save:hover {
+  background: var(--accent-hover);
+}
