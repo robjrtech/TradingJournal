@@ -1327,7 +1327,6 @@ updateAcctFilterBtn();
 ═══════════════════════════════════════════════ */
 document.querySelectorAll(".sidebar-item[data-page='analytics']").forEach(item => {
   item.addEventListener("click", () => {
-    populateMCAccountFilter();
     renderWFBenchmarks();
   });
 });
@@ -1337,28 +1336,15 @@ document.querySelectorAll(".sidebar-item[data-page='analytics']").forEach(item =
    Randomly reshuffles the trade P&L sequence N times
    to model the range of possible outcomes.
 ═══════════════════════════════════════════════ */
-function populateMCAccountFilter() {
-  const sel = document.getElementById("mc-account");
-  if (!sel) return;
-  const accounts = [...getAllAccounts()].sort();
-  sel.innerHTML = `<option value="">All Accounts</option>`;
-  accounts.filter(a => a !== "Default").forEach(a => {
-    const opt = document.createElement("option");
-    opt.value = a; opt.textContent = a;
-    sel.appendChild(opt);
-  });
-}
-
 function runMonteCarloSim() {
-  const startBal  = parseFloat(document.getElementById("mc-balance").value) || 100000;
-  const numSims   = Math.min(parseInt(document.getElementById("mc-sims").value) || 1000, 10000);
-  const acctFilter = document.getElementById("mc-account").value;
+  const startBal = 100000;
+  const numSims  = 1000;
 
-  // Collect P&Ls from all trades (filtered by account if selected)
+  // Collect P&Ls from all trades
   const pnls = [];
   Object.values(tradeData).forEach(trades =>
     trades.forEach(t => {
-      if (!acctFilter || (t.account || "Default") === acctFilter) pnls.push(t.pnl);
+      pnls.push(t.pnl);
     })
   );
 

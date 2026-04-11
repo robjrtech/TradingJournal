@@ -188,22 +188,6 @@
           <div class="panel-title">🎲 Monte Carlo Simulation</div>
           <p class="panel-desc">Randomly reshuffles your trade sequence across thousands of simulations to model the full range of possible outcomes — revealing hidden risk that averages don't show.</p>
 
-          <div class="mc-config">
-            <div class="mc-field">
-              <label>Starting Balance ($)</label>
-              <input type="number" id="mc-balance" value="100000" min="1" />
-            </div>
-            <div class="mc-field">
-              <label>Simulations</label>
-              <input type="number" id="mc-sims" value="1000" min="100" max="10000" step="100" />
-            </div>
-            <div class="mc-field">
-              <label>Account</label>
-              <select id="mc-account"></select>
-            </div>
-            <button class="btn-primary mc-run-btn" onclick="runMonteCarloSim()">▶ Run Simulation</button>
-          </div>
-
           <!-- Results (hidden until run) -->
           <div id="mc-results" style="display:none;">
             <div class="mc-stats-grid">

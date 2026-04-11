@@ -1776,64 +1776,6 @@ tr:hover .trade-kebab-btn {
 }
 
 /* ── Monte Carlo ── */
-.mc-config {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
-  align-items: flex-end;
-  margin-bottom: 22px;
-}
-
-.mc-field {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  min-width: 140px;
-}
-
-.mc-field label {
-  font-size: .75rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: .04em;
-}
-
-.mc-field input,
-.mc-field select {
-  padding: 8px 11px;
-  border: 1px solid var(--border);
-  border-radius: 7px;
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  font-size: .88rem;
-  outline: none;
-  transition: border .15s;
-}
-
-.mc-field input:focus,
-.mc-field select:focus {
-  border-color: var(--accent);
-}
-
-.mc-run-btn {
-  padding: 9px 22px;
-  background: var(--accent);
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  font-size: .88rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background .15s;
-  align-self: flex-end;
-  white-space: nowrap;
-}
-
-.mc-run-btn:hover {
-  background: var(--accent-hover);
-}
-
 .mc-stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
